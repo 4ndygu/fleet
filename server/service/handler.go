@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"context"
 	"net/http"
 	"strings"
@@ -82,6 +83,7 @@ type KolideEndpoints struct {
 	GetHost                               endpoint.Endpoint
 	DeleteHost                            endpoint.Endpoint
 	ListHosts                             endpoint.Endpoint
+	ListHostsPaginated                    endpoint.Endpoint
 	GetHostSummary                        endpoint.Endpoint
 	SearchTargets                         endpoint.Endpoint
 	GetOptions                            endpoint.Endpoint
@@ -167,6 +169,7 @@ func MakeKolideServerEndpoints(svc kolide.Service, jwtKey string) KolideEndpoint
 		GetPackSpec:                           authenticatedUser(jwtKey, svc, makeGetPackSpecEndpoint(svc)),
 		GetHost:                               authenticatedUser(jwtKey, svc, makeGetHostEndpoint(svc)),
 		ListHosts:                             authenticatedUser(jwtKey, svc, makeListHostsEndpoint(svc)),
+		ListHostsPaginated:                    authenticatedUser(jwtKey, svc, makeListHostsPaginatedEndpoint(svc)),
 		GetHostSummary:                        authenticatedUser(jwtKey, svc, makeGetHostSummaryEndpoint(svc)),
 		DeleteHost:                            authenticatedUser(jwtKey, svc, makeDeleteHostEndpoint(svc)),
 		CreateLabel:                           authenticatedUser(jwtKey, svc, makeCreateLabelEndpoint(svc)),
@@ -269,6 +272,7 @@ type kolideHandlers struct {
 	GetHost                               http.Handler
 	DeleteHost                            http.Handler
 	ListHosts                             http.Handler
+	ListHostsPaginated                    http.Handler
 	GetHostSummary                        http.Handler
 	SearchTargets                         http.Handler
 	GetOptions                            http.Handler
@@ -358,6 +362,7 @@ func makeKolideKitHandlers(e KolideEndpoints, opts []kithttp.ServerOption) *koli
 		GetHost:                               newServer(e.GetHost, decodeGetHostRequest),
 		DeleteHost:                            newServer(e.DeleteHost, decodeDeleteHostRequest),
 		ListHosts:                             newServer(e.ListHosts, decodeListHostsRequest),
+		ListHostsPaginated:                    newServer(e.ListHostsPaginated, decodeListHostsPaginatedRequest),
 		GetHostSummary:                        newServer(e.GetHostSummary, decodeNoParamsRequest),
 		SearchTargets:                         newServer(e.SearchTargets, decodeSearchTargetsRequest),
 		GetOptions:                            newServer(e.GetOptions, decodeNoParamsRequest),
@@ -407,6 +412,7 @@ func MakeHandler(svc kolide.Service, jwtKey string, logger kitlog.Logger) http.H
 // addMetrics decorates each hander with prometheus instrumentation
 func addMetrics(r *mux.Router) {
 	walkFn := func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		fmt.Println(route.GetName())
 		route.Handler(prometheus.InstrumentHandler(route.GetName(), route.GetHandler()))
 		return nil
 	}
@@ -487,6 +493,7 @@ func attachKolideAPIRoutes(r *mux.Router, h *kolideHandlers) {
 	r.Handle("/api/v1/kolide/spec/labels/{name}", h.GetLabelSpec).Methods("GET").Name("get_label_spec")
 
 	r.Handle("/api/v1/kolide/hosts", h.ListHosts).Methods("GET").Name("list_hosts")
+	r.Handle("/api/v1/kolide/hosts_page/{id}", h.ListHostsPaginated).Methods("GET").Name("list_hosts_paginated")
 	r.Handle("/api/v1/kolide/host_summary", h.GetHostSummary).Methods("GET").Name("get_host_summary")
 	r.Handle("/api/v1/kolide/hosts/{id}", h.GetHost).Methods("GET").Name("get_host")
 	r.Handle("/api/v1/kolide/hosts/{id}", h.DeleteHost).Methods("DELETE").Name("delete_host")

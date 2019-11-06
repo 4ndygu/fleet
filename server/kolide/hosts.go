@@ -38,6 +38,7 @@ type HostStore interface {
 	DeleteHost(hid uint) error
 	Host(id uint) (*Host, error)
 	ListHosts(opt ListOptions) ([]*Host, error)
+	ListHostsPaginated(opt ListOptions) ([]*Host, error)
 	EnrollHost(osqueryHostId string, nodeKeySize int) (*Host, error)
 	AuthenticateHost(nodeKey string) (*Host, error)
 	MarkHostSeen(host *Host, t time.Time) error
@@ -63,6 +64,7 @@ type HostStore interface {
 
 type HostService interface {
 	ListHosts(ctx context.Context, opt ListOptions) (hosts []*Host, err error)
+	ListHostsPaginated(ctx context.Context, opt ListOptions) (hosts []*Host, err error)
 	GetHost(ctx context.Context, id uint) (host *Host, err error)
 	GetHostSummary(ctx context.Context) (summary *HostSummary, err error)
 	DeleteHost(ctx context.Context, id uint) (err error)

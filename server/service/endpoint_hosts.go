@@ -93,6 +93,43 @@ func makeListHostsEndpoint(svc kolide.Service) endpoint.Endpoint {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// List Hosts Paginated
+////////////////////////////////////////////////////////////////////////////////
+
+type listHostsPaginatedRequest struct {
+	ListOptions kolide.ListOptions
+  page        int
+}
+
+type listHostsPaginatedResponse struct {
+	Hosts []hostResponse `json:"hosts"`
+	Err   error          `json:"error,omitempty"`
+}
+
+func (r listHostsPaginatedResponse) error() error { return r.Err }
+
+func makeListHostsPaginatedEndpoint(svc kolide.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listHostsPaginatedRequest)
+		hosts, err := svc.ListHostsPaginated(ctx, req.ListOptions)
+		if err != nil {
+			return listHostsPaginatedResponse{Err: err}, nil
+		}
+
+		hostResponses := make([]hostResponse, len(hosts))
+		for i, host := range hosts {
+			h, err := hostResponseForHost(ctx, svc, host)
+			if err != nil {
+				return listHostsPaginatedResponse{Err: err}, nil
+			}
+
+			hostResponses[i] = *h
+		}
+		return listHostsPaginatedResponse{Hosts: hostResponses}, nil
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Get Host Summary
 ////////////////////////////////////////////////////////////////////////////////
 

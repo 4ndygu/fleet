@@ -25,6 +25,24 @@ func (mw loggingMiddleware) ListHosts(ctx context.Context, opt kolide.ListOption
 	return hosts, err
 }
 
+func (mw loggingMiddleware) ListHostsPaginated(ctx context.Context, opt kolide.ListOptions) ([]*kolide.Host, error) {
+	var (
+		hosts []*kolide.Host
+		err   error
+	)
+
+	defer func(begin time.Time) {
+		_ = mw.logger.Log(
+			"method", "ListHostsPaginated",
+			"err", err,
+			"took", time.Since(begin),
+		)
+	}(time.Now())
+
+	hosts, err = mw.Service.ListHostsPaginated(ctx, opt)
+	return hosts, err
+}
+
 func (mw loggingMiddleware) GetHost(ctx context.Context, id uint) (*kolide.Host, error) {
 	var (
 		host *kolide.Host

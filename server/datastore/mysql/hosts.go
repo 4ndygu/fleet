@@ -317,6 +317,36 @@ func (d *Datastore) ListHosts(opt kolide.ListOptions) ([]*kolide.Host, error) {
 	return hosts, nil
 }
 
+func (d *Datastore) ListHostsPaginated(opt kolide.ListOptions) ([]*kolide.Host, error) {
+
+	pageOffset := opt.Page * 1000
+	sqlStatement := `
+		SELECT * FROM hosts
+		WHERE NOT deleted
+		LIMIT ?, 1000
+	`
+	// sqlStatement = appendListOptionsToSQL(sqlStatement, opt)
+	hosts := []*kolide.Host{}
+	if err := d.db.Select(&hosts, sqlStatement, pageOffset); err != nil {
+		return nil, errors.Wrap(err, "list hosts")
+	}
+
+	if opt.PerPage == 0 || (opt.Page == 0 && uint(len(hosts)) < opt.PerPage) {
+		// If all hosts, we can use the optimized network interface retrieval function
+		if err := d.getNetInterfacesForAllHosts(hosts); err != nil {
+			return nil, err
+		}
+
+	} else {
+		if err := d.getNetInterfacesForHosts(hosts); err != nil {
+			return nil, err
+		}
+	}
+
+	return hosts, nil
+}
+
+
 func (d *Datastore) CleanupIncomingHosts(now time.Time) error {
 	sqlStatement := `
 		DELETE FROM hosts

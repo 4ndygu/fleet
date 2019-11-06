@@ -28,3 +28,12 @@ func decodeListHostsRequest(ctx context.Context, r *http.Request) (interface{}, 
 	}
 	return listHostsRequest{ListOptions: opt}, nil
 }
+
+func decodeListHostsPaginatedRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	opt, err := listOptionsFromRequest(r)
+	if err != nil {
+		return nil, err
+	}
+	return listHostsPaginatedRequest{ListOptions: opt}, nil
+}
+
