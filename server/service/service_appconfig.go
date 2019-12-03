@@ -65,8 +65,8 @@ func (svc service) SendTestEmail(ctx context.Context, config *kolide.AppConfig) 
 		Subject: "Hello from Fleet",
 		To:      []string{vc.User.Email},
 		Mailer: &kolide.SMTPTestMailer{
-			KolideServerURL: template.URL(config.KolideServerURL),
-			AssetURL:        getAssetURL(),
+			BaseURL:  template.URL(config.KolideServerURL + svc.config.Server.URLPrefix),
+			AssetURL: getAssetURL(),
 		},
 		Config: config,
 	}
@@ -145,6 +145,15 @@ func appConfigFromAppConfigPayload(p kolide.AppConfigPayload, config kolide.AppC
 		}
 	}
 
+	if p.HostExpirySettings != nil {
+		if p.HostExpirySettings.HostExpiryEnabled != nil {
+			config.HostExpiryEnabled = *p.HostExpirySettings.HostExpiryEnabled
+		}
+		if p.HostExpirySettings.HostExpiryWindow != nil {
+			config.HostExpiryWindow = *p.HostExpirySettings.HostExpiryWindow
+		}
+	}
+
 	populateSMTP := func(p *kolide.SMTPSettingsPayload) {
 		if p.SMTPAuthenticationMethod != nil {
 			switch *p.SMTPAuthenticationMethod {
@@ -181,7 +190,7 @@ func appConfigFromAppConfigPayload(p kolide.AppConfigPayload, config kolide.AppC
 			config.SMTPEnableTLS = *p.SMTPEnableTLS
 		}
 
-		if p.SMTPPassword != nil {
+		if p.SMTPPassword != nil && *p.SMTPPassword != "********" {
 			config.SMTPPassword = *p.SMTPPassword
 		}
 

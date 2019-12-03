@@ -113,13 +113,13 @@ fleetctl: .prefix .pre-build .pre-fleetctl
 	go build -i -o build/fleetctl -ldflags ${KIT_VERSION} ./cmd/fleetctl
 
 lint-js:
-	eslint frontend --ext .js,.jsx
+	yarn run eslint frontend --ext .js,.jsx
 
 lint-ts:
-	tslint frontend/**/*.tsx frontend/**/*.ts
+	yarn run tslint frontend/**/*.tsx frontend/**/*.ts
 
 lint-scss:
-	sass-lint --verbose
+	yarn run sass-lint --verbose
 
 lint-go:
 	go vet ./...
@@ -188,10 +188,12 @@ endif
 
 docker-build-release: xp-fleet xp-fleetctl
 	docker build -t "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" .
+	docker tag "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" kolide/fleet:${VERSION}
 	docker tag "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" kolide/fleet:latest
 
 docker-push-release: docker-build-release
 	docker push "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+	docker push kolide/fleet:${VERSION}
 	docker push kolide/fleet:latest
 
 docker-build-circle:

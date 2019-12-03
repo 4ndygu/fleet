@@ -570,7 +570,7 @@ func (d *Datastore) MarkHostSeen(host *kolide.Host, t time.Time) error {
 }
 
 func (d *Datastore) searchHostsWithOmits(query string, omit ...uint) ([]*kolide.Host, error) {
-	hostnameQuery := transformQuery(query)
+	hostQuery := transformQuery(query)
 	ipQuery := `"` + query + `"`
 
 	sqlStatement :=
@@ -583,7 +583,7 @@ func (d *Datastore) searchHostsWithOmits(query string, omit ...uint) ([]*kolide.
 				SELECT id
 				FROM hosts
 				WHERE
-				MATCH(host_name) AGAINST(? IN BOOLEAN MODE)
+				MATCH(host_name, uuid) AGAINST(? IN BOOLEAN MODE)
 			)
 		OR
 			id IN (
@@ -598,7 +598,7 @@ func (d *Datastore) searchHostsWithOmits(query string, omit ...uint) ([]*kolide.
 		LIMIT 10
 	`
 
-	sql, args, err := sqlx.In(sqlStatement, hostnameQuery, ipQuery, omit)
+	sql, args, err := sqlx.In(sqlStatement, hostQuery, ipQuery, omit)
 	if err != nil {
 		return nil, errors.Wrap(err, "searching hosts")
 	}
@@ -653,11 +653,11 @@ func (d *Datastore) searchHostsDefault(omit ...uint) ([]*kolide.Host, error) {
 	return hosts, nil
 }
 
-// SearchHosts find hosts by query containing an IP address or a host name. Optionally
-// pass a list of IDs to omit from the search
+// SearchHosts find hosts by query containing an IP address, a host name or UUID.
+// Optionally pass a list of IDs to omit from the search
 func (d *Datastore) SearchHosts(query string, omit ...uint) ([]*kolide.Host, error) {
-	hostnameQuery := transformQuery(query)
-	if !queryMinLength(hostnameQuery) {
+	hostQuery := transformQuery(query)
+	if !queryMinLength(hostQuery) {
 		return d.searchHostsDefault(omit...)
 	}
 	if len(omit) > 0 {
@@ -677,7 +677,7 @@ func (d *Datastore) SearchHosts(query string, omit ...uint) ([]*kolide.Host, err
 				SELECT id
 				FROM hosts
 				WHERE
-				MATCH(host_name) AGAINST(? IN BOOLEAN MODE)
+				MATCH(host_name, uuid) AGAINST(? IN BOOLEAN MODE)
 			)
 		OR
 			id IN (
@@ -692,7 +692,7 @@ func (d *Datastore) SearchHosts(query string, omit ...uint) ([]*kolide.Host, err
 	`
 	hosts := []*kolide.Host{}
 
-	if err := d.db.Select(&hosts, sqlStatement, hostnameQuery, ipQuery); err != nil {
+	if err := d.db.Select(&hosts, sqlStatement, hostQuery, ipQuery); err != nil {
 		return nil, errors.Wrap(err, "searching hosts")
 	}
 
