@@ -161,11 +161,9 @@ func queryCommand() cli.Command {
 						s.Suffix = msg
 					}
 					if total == responded {
-						s.Stop()
 						if !flQuiet {
 							fmt.Fprintln(os.Stderr, msg)
 						}
-						return nil
 					}
 
 				// Check for timeout expiring
